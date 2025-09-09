@@ -13,241 +13,288 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Global variables for message sending control
-send_queue = []
-is_sending = False
-send_thread = None
-pause_sending = False
-stop_sending = False
+# Variáveis globais para controle de envio de mensagens
+fila_envio = []
+esta_enviando = False
+thread_envio = None
+pausar_envio = False
+parar_envio = False
 
-# Store API configuration
-api_config = {
+# Armazenar configuração da API
+config_api = {
     'endpoint': '',
     'token': '',
-    'phone_id': ''
+    'phone_id': '',
+    'tipo': ''
 }
 
-# Performance tracking
-performance_stats = {
-    'week': {'sent': 0, 'failed': 0, 'start_date': datetime.now()},
-    'semester': {'sent': 0, 'failed': 0, 'start_date': datetime.now()},
-    'year': {'sent': 0, 'failed': 0, 'start_date': datetime.now()}
+# APIs pré-configuradas
+apis_preconfiguradas = {
+    'meta': {
+        'nome': 'Meta (Facebook) WhatsApp Business API',
+        'endpoint': 'https://graph.facebook.com/v18.0/{phone_id}/messages',
+        'requer_phone_id': True
+    },
+    'evolution': {
+        'nome': 'Evolution API',
+        'endpoint': 'https://evolution-api.com/message/sendText/{instance}',
+        'requer_phone_id': False
+    }
 }
 
-def validate_phone_number(phone):
-    """Validate phone number in E.164 format"""
-    pattern = r'^\+?[1-9]\d{1,14}$'
-    return re.match(pattern, phone.strip()) is not None
+# Acompanhamento de performance
+estatisticas_performance = {
+    'semana': {'enviadas': 0, 'falharam': 0, 'data_inicio': datetime.now()},
+    'semestre': {'enviadas': 0, 'falharam': 0, 'data_inicio': datetime.now()},
+    'ano': {'enviadas': 0, 'falharam': 0, 'data_inicio': datetime.now()}
+}
 
-def parse_contacts(contacts_text):
-    """Parse contacts text and return list of contacts with variables"""
-    contacts = []
-    lines = contacts_text.strip().split('\n')
+def validar_numero_telefone(telefone):
+    """Validar número de telefone no formato E.164"""
+    padrao = r'^\+?[1-9]\d{1,14}$'
+    return re.match(padrao, telefone.strip()) is not None
+
+def processar_contatos(texto_contatos):
+    """Processar texto de contatos e retornar lista de contatos com variáveis"""
+    contatos = []
+    linhas = texto_contatos.strip().split('\n')
     
-    for line_num, line in enumerate(lines, 1):
-        line = line.strip()
-        if not line:
+    for num_linha, linha in enumerate(linhas, 1):
+        linha = linha.strip()
+        if not linha:
             continue
             
-        parts = [part.strip() for part in line.split(',')]
-        if len(parts) < 1:
+        partes = [parte.strip() for parte in linha.split(',')]
+        if len(partes) < 1:
             continue
             
-        phone = parts[0]
-        if not validate_phone_number(phone):
-            socketio.emit('log_update', {
-                'message': f'Linha {line_num}: Telefone inválido - {phone}',
-                'type': 'error',
+        telefone = partes[0]
+        if not validar_numero_telefone(telefone):
+            socketio.emit('atualizar_log', {
+                'mensagem': f'Linha {num_linha}: Telefone inválido - {telefone}',
+                'tipo': 'error',
                 'timestamp': datetime.now().strftime('%H:%M:%S')
             })
             continue
             
-        nome = parts[1] if len(parts) > 1 else ''
-        outro = parts[2] if len(parts) > 2 else ''
+        nome = partes[1] if len(partes) > 1 else ''
+        outro = partes[2] if len(partes) > 2 else ''
         
-        contacts.append({
-            'phone': phone,
+        contatos.append({
+            'telefone': telefone,
             'nome': nome,
             'outro': outro,
-            'line_num': line_num
+            'num_linha': num_linha
         })
     
-    return contacts
+    return contatos
 
-def substitute_variables(message, contact):
-    """Substitute variables in message"""
-    message = message.replace('{nome}', contact['nome'])
-    message = message.replace('{outro}', contact['outro'])
-    return message
+def substituir_variaveis(mensagem, contato):
+    """Substituir variáveis na mensagem"""
+    mensagem = mensagem.replace('{nome}', contato['nome'])
+    mensagem = mensagem.replace('{outro}', contato['outro'])
+    return mensagem
 
-def send_whatsapp_message(phone, message):
-    """Send WhatsApp message using API"""
+def enviar_mensagem_whatsapp(telefone, mensagem):
+    """Enviar mensagem WhatsApp usando API"""
     try:
-        if not api_config['endpoint'] or not api_config['token']:
+        if not config_api['endpoint'] or not config_api['token']:
             return False, "API não configurada"
         
-        # This is a mock implementation - replace with actual WhatsApp API call
         headers = {
-            'Authorization': f'Bearer {api_config["token"]}',
+            'Authorization': f'Bearer {config_api["token"]}',
             'Content-Type': 'application/json'
         }
         
-        data = {
-            'messaging_product': 'whatsapp',
-            'to': phone,
-            'type': 'text',
-            'text': {'body': message}
-        }
+        # Configurar dados baseado no tipo de API
+        if config_api['tipo'] == 'meta':
+            endpoint = config_api['endpoint'].replace('{phone_id}', config_api['phone_id'])
+            dados = {
+                'messaging_product': 'whatsapp',
+                'to': telefone,
+                'type': 'text',
+                'text': {'body': mensagem}
+            }
+        elif config_api['tipo'] == 'evolution':
+            endpoint = config_api['endpoint'].replace('{instance}', config_api.get('instance', 'default'))
+            dados = {
+                'number': telefone,
+                'text': mensagem
+            }
+        else:
+            # API personalizada
+            endpoint = config_api['endpoint']
+            dados = {
+                'to': telefone,
+                'message': mensagem
+            }
         
-        # For demo purposes, we'll simulate API call
-        # response = requests.post(api_config['endpoint'], headers=headers, json=data)
+        # Para demonstração, simular chamada da API
+        # response = requests.post(endpoint, headers=headers, json=dados)
         # return response.status_code == 200, response.text
         
-        # Simulate success/failure for demo
+        # Simular sucesso/falha para demo
         import random
-        success = random.choice([True, True, True, False])  # 75% success rate for demo
-        return success, "Mensagem enviada" if success else "Erro na API"
+        sucesso = random.choice([True, True, True, False])  # 75% taxa de sucesso para demo
+        return sucesso, "Mensagem enviada" if sucesso else "Erro na API"
         
     except Exception as e:
         return False, str(e)
 
-def send_messages_worker():
-    """Worker function to send messages"""
-    global is_sending, pause_sending, stop_sending, send_queue
+def trabalhador_envio_mensagens():
+    """Função trabalhadora para enviar mensagens"""
+    global esta_enviando, pausar_envio, parar_envio, fila_envio
     
-    while send_queue and not stop_sending:
-        if pause_sending:
+    while fila_envio and not parar_envio:
+        if pausar_envio:
             time.sleep(1)
             continue
             
-        contact = send_queue.pop(0)
-        message = substitute_variables(contact['message'], contact)
+        contato = fila_envio.pop(0)
+        mensagem = substituir_variaveis(contato['mensagem'], contato)
         
-        socketio.emit('log_update', {
-            'message': f'Enviando para {contact["phone"]} (Linha {contact["line_num"]})...',
-            'type': 'info',
+        socketio.emit('atualizar_log', {
+            'mensagem': f'Enviando para {contato["telefone"]} (Linha {contato["num_linha"]})...',
+            'tipo': 'info',
             'timestamp': datetime.now().strftime('%H:%M:%S')
         })
         
-        success, result = send_whatsapp_message(contact['phone'], message)
+        sucesso, resultado = enviar_mensagem_whatsapp(contato['telefone'], mensagem)
         
-        if success:
-            performance_stats['week']['sent'] += 1
-            performance_stats['semester']['sent'] += 1
-            performance_stats['year']['sent'] += 1
-            socketio.emit('log_update', {
-                'message': f'✓ Enviado para {contact["phone"]} - {result}',
-                'type': 'success',
+        if sucesso:
+            estatisticas_performance['semana']['enviadas'] += 1
+            estatisticas_performance['semestre']['enviadas'] += 1
+            estatisticas_performance['ano']['enviadas'] += 1
+            socketio.emit('atualizar_log', {
+                'mensagem': f'✓ Enviado para {contato["telefone"]} - {resultado}',
+                'tipo': 'success',
                 'timestamp': datetime.now().strftime('%H:%M:%S')
             })
         else:
-            performance_stats['week']['failed'] += 1
-            performance_stats['semester']['failed'] += 1
-            performance_stats['year']['failed'] += 1
-            socketio.emit('log_update', {
-                'message': f'✗ Falha para {contact["phone"]} - {result}',
-                'type': 'error',
+            estatisticas_performance['semana']['falharam'] += 1
+            estatisticas_performance['semestre']['falharam'] += 1
+            estatisticas_performance['ano']['falharam'] += 1
+            socketio.emit('atualizar_log', {
+                'mensagem': f'✗ Falha para {contato["telefone"]} - {resultado}',
+                'tipo': 'error',
                 'timestamp': datetime.now().strftime('%H:%M:%S')
             })
         
-        # Update performance stats
-        socketio.emit('performance_update', performance_stats)
+        # Atualizar estatísticas de performance
+        socketio.emit('atualizar_performance', estatisticas_performance)
         
-        if send_queue and not stop_sending:
-            # Random delay between min and max interval
-            delay = random.randint(contact['min_interval'], contact['max_interval'])
-            socketio.emit('log_update', {
-                'message': f'Aguardando {delay} segundos...',
-                'type': 'info',
+        if fila_envio and not parar_envio:
+            # Delay aleatório entre intervalo mínimo e máximo
+            atraso = random.randint(contato['intervalo_min'], contato['intervalo_max'])
+            socketio.emit('atualizar_log', {
+                'mensagem': f'Aguardando {atraso} segundos...',
+                'tipo': 'info',
                 'timestamp': datetime.now().strftime('%H:%M:%S')
             })
-            time.sleep(delay)
+            time.sleep(atraso)
     
-    is_sending = False
-    socketio.emit('sending_stopped')
+    esta_enviando = False
+    socketio.emit('envio_parado')
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/configure', methods=['POST'])
-def configure_api():
-    global api_config
-    data = request.get_json()
+@app.route('/api/configurar', methods=['POST'])
+def configurar_api():
+    global config_api
+    dados = request.get_json()
     
-    api_config['endpoint'] = data.get('endpoint', '')
-    api_config['token'] = data.get('token', '')
-    api_config['phone_id'] = data.get('phone_id', '')
+    tipo_api = dados.get('tipo_api', '')
     
-    # Validate API configuration (mock validation)
-    if api_config['endpoint'] and api_config['token']:
-        return jsonify({'success': True, 'message': 'API configurada com sucesso'})
+    if tipo_api in apis_preconfiguradas:
+        config_api['tipo'] = tipo_api
+        config_api['endpoint'] = apis_preconfiguradas[tipo_api]['endpoint']
+        config_api['token'] = dados.get('token', '')
+        config_api['phone_id'] = dados.get('phone_id', '')
+        
+        if tipo_api == 'evolution':
+            config_api['instance'] = dados.get('instance', 'default')
     else:
-        return jsonify({'success': False, 'message': 'Dados de API inválidos'})
+        # API personalizada
+        config_api['endpoint'] = dados.get('endpoint', '')
+        config_api['token'] = dados.get('token', '')
+        config_api['phone_id'] = dados.get('phone_id', '')
+        config_api['tipo'] = 'personalizada'
+    
+    # Validar configuração da API
+    if config_api['endpoint'] and config_api['token']:
+        return jsonify({'sucesso': True, 'mensagem': 'API configurada com sucesso'})
+    else:
+        return jsonify({'sucesso': False, 'mensagem': 'Dados de API inválidos'})
 
-@app.route('/api/test-message', methods=['POST'])
-def test_message():
-    data = request.get_json()
-    phone = data.get('phone', '')
-    message = data.get('message', '')
+@app.route('/api/mensagem-teste', methods=['POST'])
+def mensagem_teste():
+    dados = request.get_json()
+    telefone = dados.get('telefone', '')
+    mensagem = dados.get('mensagem', '')
     
-    if not validate_phone_number(phone):
-        return jsonify({'success': False, 'message': 'Número de telefone inválido'})
+    if not validar_numero_telefone(telefone):
+        return jsonify({'sucesso': False, 'mensagem': 'Número de telefone inválido'})
     
-    success, result = send_whatsapp_message(phone, message)
-    return jsonify({'success': success, 'message': result})
+    sucesso, resultado = enviar_mensagem_whatsapp(telefone, mensagem)
+    return jsonify({'sucesso': sucesso, 'mensagem': resultado})
 
-@app.route('/api/start-sending', methods=['POST'])
-def start_sending():
-    global send_queue, is_sending, send_thread, pause_sending, stop_sending
+@app.route('/api/iniciar-envio', methods=['POST'])
+def iniciar_envio():
+    global fila_envio, esta_enviando, thread_envio, pausar_envio, parar_envio
     
-    if is_sending:
-        return jsonify({'success': False, 'message': 'Envio já está em andamento'})
+    if esta_enviando:
+        return jsonify({'sucesso': False, 'mensagem': 'Envio já está em andamento'})
     
-    data = request.get_json()
-    contacts_text = data.get('contacts', '')
-    message_template = data.get('message', '')
-    min_interval = int(data.get('min_interval', 5))
-    max_interval = int(data.get('max_interval', 10))
+    dados = request.get_json()
+    texto_contatos = dados.get('contatos', '')
+    template_mensagem = dados.get('mensagem', '')
+    intervalo_min = int(dados.get('intervalo_min', 5))
+    intervalo_max = int(dados.get('intervalo_max', 10))
     
-    contacts = parse_contacts(contacts_text)
+    contatos = processar_contatos(texto_contatos)
     
-    if not contacts:
-        return jsonify({'success': False, 'message': 'Nenhum contato válido encontrado'})
+    if not contatos:
+        return jsonify({'sucesso': False, 'mensagem': 'Nenhum contato válido encontrado'})
     
-    send_queue = []
-    for contact in contacts:
-        contact['message'] = message_template
-        contact['min_interval'] = min_interval
-        contact['max_interval'] = max_interval
-        send_queue.append(contact)
+    fila_envio = []
+    for contato in contatos:
+        contato['mensagem'] = template_mensagem
+        contato['intervalo_min'] = intervalo_min
+        contato['intervalo_max'] = intervalo_max
+        fila_envio.append(contato)
     
-    is_sending = True
-    pause_sending = False
-    stop_sending = False
+    esta_enviando = True
+    pausar_envio = False
+    parar_envio = False
     
-    send_thread = threading.Thread(target=send_messages_worker)
-    send_thread.start()
+    thread_envio = threading.Thread(target=trabalhador_envio_mensagens)
+    thread_envio.start()
     
-    return jsonify({'success': True, 'message': f'Iniciando envio para {len(contacts)} contatos'})
+    return jsonify({'sucesso': True, 'mensagem': f'Iniciando envio para {len(contatos)} contatos'})
 
-@app.route('/api/pause-sending', methods=['POST'])
-def pause_sending_route():
-    global pause_sending
-    pause_sending = not pause_sending
-    status = 'pausado' if pause_sending else 'retomado'
-    return jsonify({'success': True, 'message': f'Envio {status}', 'paused': pause_sending})
+@app.route('/api/pausar-envio', methods=['POST'])
+def rota_pausar_envio():
+    global pausar_envio
+    pausar_envio = not pausar_envio
+    status = 'pausado' if pausar_envio else 'retomado'
+    return jsonify({'sucesso': True, 'mensagem': f'Envio {status}', 'pausado': pausar_envio})
 
-@app.route('/api/stop-sending', methods=['POST'])
-def stop_sending_route():
-    global stop_sending, send_queue
-    stop_sending = True
-    send_queue = []
-    return jsonify({'success': True, 'message': 'Envio cancelado'})
+@app.route('/api/parar-envio', methods=['POST'])
+def rota_parar_envio():
+    global parar_envio, fila_envio
+    parar_envio = True
+    fila_envio = []
+    return jsonify({'sucesso': True, 'mensagem': 'Envio cancelado'})
 
 @app.route('/api/performance', methods=['GET'])
-def get_performance():
-    return jsonify(performance_stats)
+def obter_performance():
+    return jsonify(estatisticas_performance)
+
+@app.route('/api/apis-disponiveis', methods=['GET'])
+def obter_apis_disponiveis():
+    return jsonify(apis_preconfiguradas)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False, log_output=True)
