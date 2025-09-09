@@ -176,57 +176,6 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
         }
         
-        .api-comparison {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 10px 0;
-        }
-        
-        .api-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .badge-official {
-            background: linear-gradient(45deg, #1976d2, #42a5f5);
-            color: white;
-        }
-        
-        .badge-popular {
-            background: linear-gradient(45deg, #388e3c, #66bb6a);
-            color: white;
-        }
-        
-        .badge-flexible {
-            background: linear-gradient(45deg, #f57c00, #ffb74d);
-            color: white;
-        }
-        
-        .feature-list {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .feature-list li {
-            padding: 2px 0;
-            border-left: 3px solid transparent;
-            padding-left: 8px;
-            margin: 4px 0;
-        }
-        
-        .feature-pros {
-            border-left-color: #4caf50;
-        }
-        
-        .feature-cons {
-            border-left-color: #ff9800;
-        }
-        
         .title-section {
             text-align: center;
             margin-bottom: 30px;
@@ -264,60 +213,14 @@
                        title="Escolha uma API pré-configurada ou configure manualmente suas credenciais do WhatsApp Business"></i>
                 </h3>
                 
-                <!-- Resumo Rápido das APIs -->
-                <div class="api-comparison mb-4">
-                    <h5 class="text-center mb-3">📊 Comparação Rápida das APIs</h5>
-                    <div class="row text-center">
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-primary h-100">
-                                <div class="card-body">
-                                    <h6 class="text-primary">🏆 Meta (Facebook)</h6>
-                                    <span class="badge-official api-badge">OFICIAL</span>
-                                    <div class="mt-2 small">
-                                        ✅ Máxima confiabilidade<br>
-                                        ✅ Sem limites de volume<br>
-                                        ❌ Paga por mensagem
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-success h-100">
-                                <div class="card-body">
-                                    <h6 class="text-success">🚀 Evolution API</h6>
-                                    <span class="badge-popular api-badge">POPULAR</span>
-                                    <div class="mt-2 small">
-                                        ✅ Gratuita para uso básico<br>
-                                        ✅ Setup em minutos<br>
-                                        ⚠️ Não oficial (baixo risco)
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-dark border-warning h-100">
-                                <div class="card-body">
-                                    <h6 class="text-warning">🔧 API Personalizada</h6>
-                                    <span class="badge-flexible api-badge">FLEXÍVEL</span>
-                                    <div class="mt-2 small">
-                                        ✅ 100% customizada<br>
-                                        ✅ Controle total<br>
-                                        ❌ Requer conhecimento técnico
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
                 <div class="row mb-3">
                     <div class="col-md-12">
                         <label class="form-label">Tipo de API</label>
                         <select class="form-select" id="tipoApi" onchange="alterarTipoApi()">
-                            <option value="">🤔 Selecione uma API...</option>
-                            <option value="meta">🏆 Meta (Facebook) - OFICIAL & CONFIÁVEL</option>
-                            <option value="evolution">🚀 Evolution API - POPULAR & GRATUITA</option>
-                            <option value="personalizada">🔧 API Personalizada - MÁXIMA FLEXIBILIDADE</option>
+                            <option value="">Selecione uma API...</option>
+                            <option value="meta">Meta (Facebook) WhatsApp Business API</option>
+                            <option value="evolution">Evolution API</option>
+                            <option value="personalizada">API Personalizada</option>
                         </select>
                     </div>
                 </div>
@@ -556,38 +459,11 @@
                         labelPhoneId.textContent = 'ID do Telefone';
                         ajudaPhoneId.textContent = 'Obrigatório para Meta API';
                         textoInstrucoes.innerHTML = `
-                            <div class="mb-3">
-                                <h5 class="text-primary">🏆 Meta (Facebook) WhatsApp Business API - OFICIAL</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6 class="text-success">✅ <strong>VANTAGENS:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>🛡️ <strong>Oficial do WhatsApp</strong> - Máxima confiabilidade</li>
-                                            <li>📈 <strong>Sem limites de volume</strong> - Envie milhares por dia</li>
-                                            <li>🔒 <strong>Máxima segurança</strong> - Criptografia end-to-end</li>
-                                            <li>💼 <strong>Suporte empresarial</strong> - Atendimento Meta</li>
-                                            <li>🎯 <strong>Recursos avançados</strong> - Templates, botões, mídia</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6 class="text-warning">⚠️ <strong>CONSIDERAÇÕES:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>💳 Paga por mensagem enviada</li>
-                                            <li>📋 Processo de aprovação necessário</li>
-                                            <li>🏢 Focado em uso empresarial</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="bg-dark p-2 rounded mt-2">
-                                    <h6 class="text-info mb-2">📋 <strong>COMO CONFIGURAR:</strong></h6>
-                                    <ol class="small mb-0">
-                                        <li>Acesse <a href="https://developers.facebook.com/" target="_blank" class="text-primary">Facebook Developers</a></li>
-                                        <li>Crie um app WhatsApp Business</li>
-                                        <li>Copie o Token de Acesso permanente</li>
-                                        <li>Copie o ID do número de telefone</li>
-                                    </ol>
-                                </div>
-                            </div>
+                            <strong>Meta (Facebook) WhatsApp Business API:</strong><br>
+                            1. Acesse o <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a><br>
+                            2. Crie um app WhatsApp Business<br>
+                            3. Copie o Token de Acesso permanente<br>
+                            4. Copie o ID do número de telefone WhatsApp Business
                         `;
                         break;
                     case 'evolution':
@@ -597,39 +473,11 @@
                         labelPhoneId.textContent = 'Nome da Instância';
                         ajudaPhoneId.textContent = 'Nome da sua instância Evolution API';
                         textoInstrucoes.innerHTML = `
-                            <div class="mb-3">
-                                <h5 class="text-success">🚀 Evolution API - POPULAR & FLEXÍVEL</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6 class="text-success">✅ <strong>VANTAGENS:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>🆓 <strong>Gratuita para uso básico</strong></li>
-                                            <li>⚡ <strong>Setup rápido</strong> - Funciona em minutos</li>
-                                            <li>🔄 <strong>Multi-instância</strong> - Vários WhatsApp</li>
-                                            <li>🛠️ <strong>Open Source</strong> - Código aberto</li>
-                                            <li>📱 <strong>QR Code simples</strong> - Fácil conexão</li>
-                                            <li>💬 <strong>Comunidade ativa</strong> - Muito suporte</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6 class="text-warning">⚠️ <strong>CONSIDERAÇÕES:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>🚫 Não é oficial do WhatsApp</li>
-                                            <li>⚖️ Riscos de banimento (baixos)</li>
-                                            <li>🔧 Pode precisar de manutenção</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="bg-dark p-2 rounded mt-2">
-                                    <h6 class="text-info mb-2">📋 <strong>COMO CONFIGURAR:</strong></h6>
-                                    <ol class="small mb-0">
-                                        <li>Configure sua instância Evolution API</li>
-                                        <li>Gere o token de acesso da API</li>
-                                        <li>Informe o nome da sua instância</li>
-                                        <li>Conecte seu WhatsApp via QR Code</li>
-                                    </ol>
-                                </div>
-                            </div>
+                            <strong>Evolution API:</strong><br>
+                            1. Configure sua instância Evolution API<br>
+                            2. Gere o token de acesso da API<br>
+                            3. Informe o nome da sua instância<br>
+                            4. Conecte seu WhatsApp via QR Code
                         `;
                         break;
                     case 'personalizada':
@@ -640,38 +488,9 @@
                         labelPhoneId.textContent = 'Parâmetro Extra (opcional)';
                         ajudaPhoneId.textContent = 'Campo adicional se necessário';
                         textoInstrucoes.innerHTML = `
-                            <div class="mb-3">
-                                <h5 class="text-info">🔧 API Personalizada - MÁXIMA FLEXIBILIDADE</h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <h6 class="text-success">✅ <strong>VANTAGENS:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>🎯 <strong>100% Customizada</strong> - Sua própria API</li>
-                                            <li>🔒 <strong>Controle total</strong> - Você define tudo</li>
-                                            <li>💰 <strong>Sem dependências</strong> - Você gerencia custos</li>
-                                            <li>⚡ <strong>Performance dedicada</strong></li>
-                                            <li>🛡️ <strong>Privacidade máxima</strong></li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h6 class="text-warning">⚠️ <strong>CONSIDERAÇÕES:</strong></h6>
-                                        <ul class="small text-light">
-                                            <li>🧑‍💻 Requer conhecimento técnico</li>
-                                            <li>🔧 Você mantém a infraestrutura</li>
-                                            <li>📝 Deve seguir padrões da API</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="bg-dark p-2 rounded mt-2">
-                                    <h6 class="text-info mb-2">📋 <strong>REQUISITOS TÉCNICOS:</strong></h6>
-                                    <ul class="small mb-0">
-                                        <li>✅ Aceitar requisições <strong>POST</strong> com JSON</li>
-                                        <li>✅ Campos obrigatórios: <code>'to'</code> e <code>'message'</code></li>
-                                        <li>✅ Header: <code>Authorization: Bearer TOKEN</code></li>
-                                        <li>✅ Retornar status HTTP apropriado</li>
-                                    </ul>
-                                </div>
-                            </div>
+                            <strong>API Personalizada:</strong><br>
+                            Configure manualmente sua API de WhatsApp.<br>
+                            Certifique-se de que sua API aceita requisições JSON com os campos 'to' e 'message'.
                         `;
                         break;
                 }
