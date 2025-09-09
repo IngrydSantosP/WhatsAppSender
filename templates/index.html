@@ -210,26 +210,48 @@
             <div class="section-card">
                 <h3><i class="bi bi-gear"></i> Configuração da API WhatsApp 
                     <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
-                       title="Insira as credenciais da API do WhatsApp Business para conectar o sistema"></i>
+                       title="Escolha uma API pré-configurada ou configure manualmente suas credenciais do WhatsApp Business"></i>
                 </h3>
-                <div class="row">
-                    <div class="col-md-4">
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Tipo de API</label>
+                        <select class="form-select" id="tipoApi" onchange="alterarTipoApi()">
+                            <option value="">Selecione uma API...</option>
+                            <option value="meta">Meta (Facebook) WhatsApp Business API</option>
+                            <option value="evolution">Evolution API</option>
+                            <option value="personalizada">API Personalizada</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row" id="camposApi" style="display: none;">
+                    <div class="col-md-4" id="campoEndpoint">
                         <label class="form-label">Endpoint da API</label>
                         <input type="url" class="form-control" id="apiEndpoint" 
-                               placeholder="https://graph.facebook.com/v17.0/...">
+                               placeholder="https://graph.facebook.com/v18.0/..." readonly>
+                        <small class="text-light">Endpoint automático para a API selecionada</small>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Token de Acesso</label>
                         <input type="password" class="form-control" id="apiToken" 
-                               placeholder="Seu token de acesso">
+                               placeholder="Cole seu token aqui">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">ID do Telefone</label>
+                    <div class="col-md-4" id="campoPhoneId">
+                        <label class="form-label" id="labelPhoneId">ID do Telefone</label>
                         <input type="text" class="form-control" id="phoneId" 
-                               placeholder="ID do número de telefone">
+                               placeholder="ID do número WhatsApp Business">
+                        <small class="text-light" id="ajudaPhoneId">Obrigatório para Meta API</small>
                     </div>
                 </div>
-                <button class="btn btn-primary mt-3" onclick="configureAPI()">
+                
+                <div class="alert alert-info mt-3" id="infoApi" style="display: none;">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Instruções:</strong>
+                    <div id="textoInstrucoes"></div>
+                </div>
+                
+                <button class="btn btn-primary mt-3" onclick="configurarAPI()" id="btnConfigurar" disabled>
                     <i class="bi bi-check-circle"></i> Configurar API
                 </button>
             </div>
@@ -368,137 +390,228 @@
         });
         
         // Socket event listeners
-        socket.on('log_update', function(data) {
-            addLogEntry(data.message, data.type, data.timestamp);
+        socket.on('atualizar_log', function(data) {
+            adicionarEntradaLog(data.mensagem, data.tipo, data.timestamp);
         });
         
-        socket.on('performance_update', function(data) {
-            updatePerformance(data);
+        socket.on('atualizar_performance', function(data) {
+            atualizarPerformance(data);
         });
         
-        socket.on('sending_stopped', function() {
+        socket.on('envio_parado', function() {
             document.getElementById('startBtn').disabled = false;
             document.getElementById('pauseBtn').disabled = true;
             document.getElementById('stopBtn').disabled = true;
-            addLogEntry('Envio finalizado', 'info', new Date().toLocaleTimeString());
+            adicionarEntradaLog('Envio finalizado', 'info', new Date().toLocaleTimeString());
         });
         
-        function addLogEntry(message, type, timestamp) {
-            const logArea = document.getElementById('logArea');
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry log-${type}`;
-            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
-            logArea.appendChild(logEntry);
-            logArea.scrollTop = logArea.scrollHeight;
+        // Carregar APIs disponíveis ao inicializar
+        carregarApisDisponiveis();
+        
+        function adicionarEntradaLog(mensagem, tipo, timestamp) {
+            const areaLog = document.getElementById('logArea');
+            const entradaLog = document.createElement('div');
+            entradaLog.className = `log-entry log-${tipo}`;
+            entradaLog.innerHTML = `<strong>[${timestamp}]</strong> ${mensagem}`;
+            areaLog.appendChild(entradaLog);
+            areaLog.scrollTop = areaLog.scrollHeight;
         }
         
-        function updatePerformance(data) {
-            document.getElementById('weekSent').textContent = data.week.sent;
-            document.getElementById('weekFailed').textContent = data.week.failed;
-            document.getElementById('semesterSent').textContent = data.semester.sent;
-            document.getElementById('semesterFailed').textContent = data.semester.failed;
-            document.getElementById('yearSent').textContent = data.year.sent;
-            document.getElementById('yearFailed').textContent = data.year.failed;
+        function atualizarPerformance(dados) {
+            document.getElementById('weekSent').textContent = dados.semana.enviadas;
+            document.getElementById('weekFailed').textContent = dados.semana.falharam;
+            document.getElementById('semesterSent').textContent = dados.semestre.enviadas;
+            document.getElementById('semesterFailed').textContent = dados.semestre.falharam;
+            document.getElementById('yearSent').textContent = dados.ano.enviadas;
+            document.getElementById('yearFailed').textContent = dados.ano.falharam;
         }
         
-        function configureAPI() {
+        function carregarApisDisponiveis() {
+            fetch('/api/apis-disponiveis')
+                .then(response => response.json())
+                .then(data => {
+                    // APIs já estão carregadas no HTML
+                    console.log('APIs disponíveis:', data);
+                });
+        }
+        
+        function alterarTipoApi() {
+            const tipoApi = document.getElementById('tipoApi').value;
+            const camposApi = document.getElementById('camposApi');
+            const infoApi = document.getElementById('infoApi');
+            const textoInstrucoes = document.getElementById('textoInstrucoes');
+            const btnConfigurar = document.getElementById('btnConfigurar');
+            const apiEndpoint = document.getElementById('apiEndpoint');
+            const campoPhoneId = document.getElementById('campoPhoneId');
+            const labelPhoneId = document.getElementById('labelPhoneId');
+            const ajudaPhoneId = document.getElementById('ajudaPhoneId');
+            
+            if (tipoApi) {
+                camposApi.style.display = 'flex';
+                infoApi.style.display = 'block';
+                btnConfigurar.disabled = false;
+                
+                switch(tipoApi) {
+                    case 'meta':
+                        apiEndpoint.value = 'https://graph.facebook.com/v18.0/{phone_id}/messages';
+                        apiEndpoint.readOnly = true;
+                        campoPhoneId.style.display = 'block';
+                        labelPhoneId.textContent = 'ID do Telefone';
+                        ajudaPhoneId.textContent = 'Obrigatório para Meta API';
+                        textoInstrucoes.innerHTML = `
+                            <strong>Meta (Facebook) WhatsApp Business API:</strong><br>
+                            1. Acesse o <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a><br>
+                            2. Crie um app WhatsApp Business<br>
+                            3. Copie o Token de Acesso permanente<br>
+                            4. Copie o ID do número de telefone WhatsApp Business
+                        `;
+                        break;
+                    case 'evolution':
+                        apiEndpoint.value = 'https://evolution-api.com/message/sendText/{instance}';
+                        apiEndpoint.readOnly = true;
+                        campoPhoneId.style.display = 'block';
+                        labelPhoneId.textContent = 'Nome da Instância';
+                        ajudaPhoneId.textContent = 'Nome da sua instância Evolution API';
+                        textoInstrucoes.innerHTML = `
+                            <strong>Evolution API:</strong><br>
+                            1. Configure sua instância Evolution API<br>
+                            2. Gere o token de acesso da API<br>
+                            3. Informe o nome da sua instância<br>
+                            4. Conecte seu WhatsApp via QR Code
+                        `;
+                        break;
+                    case 'personalizada':
+                        apiEndpoint.value = '';
+                        apiEndpoint.readOnly = false;
+                        apiEndpoint.placeholder = 'https://sua-api.com/send';
+                        campoPhoneId.style.display = 'block';
+                        labelPhoneId.textContent = 'Parâmetro Extra (opcional)';
+                        ajudaPhoneId.textContent = 'Campo adicional se necessário';
+                        textoInstrucoes.innerHTML = `
+                            <strong>API Personalizada:</strong><br>
+                            Configure manualmente sua API de WhatsApp.<br>
+                            Certifique-se de que sua API aceita requisições JSON com os campos 'to' e 'message'.
+                        `;
+                        break;
+                }
+            } else {
+                camposApi.style.display = 'none';
+                infoApi.style.display = 'none';
+                btnConfigurar.disabled = true;
+            }
+        }
+        
+        function configurarAPI() {
+            const tipoApi = document.getElementById('tipoApi').value;
             const endpoint = document.getElementById('apiEndpoint').value;
             const token = document.getElementById('apiToken').value;
             const phoneId = document.getElementById('phoneId').value;
             
-            if (!endpoint || !token) {
-                alert('Por favor, preencha todos os campos da API');
+            if (!tipoApi || !token) {
+                alert('Por favor, selecione o tipo de API e preencha o token');
                 return;
             }
             
-            fetch('/api/configure', {
+            if (tipoApi === 'meta' && !phoneId) {
+                alert('Para a Meta API, o ID do telefone é obrigatório');
+                return;
+            }
+            
+            const dados = {
+                tipo_api: tipoApi,
+                endpoint: endpoint,
+                token: token,
+                phone_id: phoneId
+            };
+            
+            if (tipoApi === 'evolution') {
+                dados.instance = phoneId;
+            }
+            
+            fetch('/api/configurar', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    endpoint: endpoint,
-                    token: token,
-                    phone_id: phoneId
-                })
+                body: JSON.stringify(dados)
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    addLogEntry('✓ ' + data.message, 'success', new Date().toLocaleTimeString());
+                if (data.sucesso) {
+                    adicionarEntradaLog('✓ ' + data.mensagem, 'success', new Date().toLocaleTimeString());
                 } else {
-                    addLogEntry('✗ ' + data.message, 'error', new Date().toLocaleTimeString());
+                    adicionarEntradaLog('✗ ' + data.mensagem, 'error', new Date().toLocaleTimeString());
                 }
             });
         }
         
         function sendTestMessage() {
-            const phone = document.getElementById('testPhone').value;
-            const message = document.getElementById('messageText').value;
+            const telefone = document.getElementById('testPhone').value;
+            const mensagem = document.getElementById('messageText').value;
             
-            if (!phone || !message) {
+            if (!telefone || !mensagem) {
                 alert('Por favor, preencha o telefone e a mensagem para o teste');
                 return;
             }
             
-            fetch('/api/test-message', {
+            fetch('/api/mensagem-teste', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    phone: phone,
-                    message: message
+                    telefone: telefone,
+                    mensagem: mensagem
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    addLogEntry(`✓ Teste enviado: ${data.message}`, 'success', new Date().toLocaleTimeString());
+                if (data.sucesso) {
+                    adicionarEntradaLog(`✓ Teste enviado: ${data.mensagem}`, 'success', new Date().toLocaleTimeString());
                 } else {
-                    addLogEntry(`✗ Erro no teste: ${data.message}`, 'error', new Date().toLocaleTimeString());
+                    adicionarEntradaLog(`✗ Erro no teste: ${data.mensagem}`, 'error', new Date().toLocaleTimeString());
                 }
             });
         }
         
         function startSending() {
-            const contacts = document.getElementById('contactsList').value;
-            const message = document.getElementById('messageText').value;
-            const minInterval = document.getElementById('minInterval').value;
-            const maxInterval = document.getElementById('maxInterval').value;
+            const contatos = document.getElementById('contactsList').value;
+            const mensagem = document.getElementById('messageText').value;
+            const intervaloMin = document.getElementById('minInterval').value;
+            const intervaloMax = document.getElementById('maxInterval').value;
             
-            if (!contacts || !message) {
+            if (!contatos || !mensagem) {
                 alert('Por favor, preencha a lista de contatos e a mensagem');
                 return;
             }
             
-            fetch('/api/start-sending', {
+            fetch('/api/iniciar-envio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    contacts: contacts,
-                    message: message,
-                    min_interval: minInterval,
-                    max_interval: maxInterval
+                    contatos: contatos,
+                    mensagem: mensagem,
+                    intervalo_min: intervaloMin,
+                    intervalo_max: intervaloMax
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    addLogEntry('✓ ' + data.message, 'success', new Date().toLocaleTimeString());
+                if (data.sucesso) {
+                    adicionarEntradaLog('✓ ' + data.mensagem, 'success', new Date().toLocaleTimeString());
                     document.getElementById('startBtn').disabled = true;
                     document.getElementById('pauseBtn').disabled = false;
                     document.getElementById('stopBtn').disabled = false;
                 } else {
-                    addLogEntry('✗ ' + data.message, 'error', new Date().toLocaleTimeString());
+                    adicionarEntradaLog('✗ ' + data.mensagem, 'error', new Date().toLocaleTimeString());
                 }
             });
         }
         
         function pauseSending() {
-            fetch('/api/pause-sending', {
+            fetch('/api/pausar-envio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -506,19 +619,19 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    isPaused = data.paused;
+                if (data.sucesso) {
+                    isPaused = data.pausado;
                     const pauseBtn = document.getElementById('pauseBtn');
                     pauseBtn.innerHTML = isPaused ? 
                         '<i class="bi bi-play"></i> Retomar' : 
                         '<i class="bi bi-pause"></i> Pausar';
-                    addLogEntry('✓ ' + data.message, 'info', new Date().toLocaleTimeString());
+                    adicionarEntradaLog('✓ ' + data.mensagem, 'info', new Date().toLocaleTimeString());
                 }
             });
         }
         
         function stopSending() {
-            fetch('/api/stop-sending', {
+            fetch('/api/parar-envio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -526,8 +639,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    addLogEntry('✓ ' + data.message, 'info', new Date().toLocaleTimeString());
+                if (data.sucesso) {
+                    adicionarEntradaLog('✓ ' + data.mensagem, 'info', new Date().toLocaleTimeString());
                     document.getElementById('startBtn').disabled = false;
                     document.getElementById('pauseBtn').disabled = true;
                     document.getElementById('stopBtn').disabled = true;
@@ -537,13 +650,13 @@
         
         function clearLogs() {
             document.getElementById('logArea').innerHTML = '';
-            addLogEntry('Logs limpos', 'info', new Date().toLocaleTimeString());
+            adicionarEntradaLog('Logs limpos', 'info', new Date().toLocaleTimeString());
         }
         
-        // Load performance data on page load
+        // Carregar dados de performance ao carregar a página
         fetch('/api/performance')
             .then(response => response.json())
-            .then(data => updatePerformance(data));
+            .then(data => atualizarPerformance(data));
     </script>
 </body>
 </html>
