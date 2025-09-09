@@ -1,1073 +1,207 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Sender - Ricardo França</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #1a237e 0%, #ff6f00 100%);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><g fill="%23ffffff" opacity="0.1"><rect x="100" y="100" width="30" height="80"/><rect x="200" y="80" width="25" height="100"/><rect x="150" y="120" width="20" height="60"/><rect x="300" y="90" width="35" height="90"/><rect x="400" y="70" width="28" height="110"/><rect x="500" y="100" width="32" height="80"/><rect x="600" y="60" width="30" height="120"/><rect x="700" y="90" width="25" height="90"/><rect x="800" y="80" width="35" height="100"/><rect x="900" y="100" width="30" height="80"/><circle cx="120" cy="200" r="3"/><circle cx="250" cy="220" r="2"/><circle cx="380" cy="210" r="3"/><circle cx="520" cy="200" r="2"/><circle cx="650" cy="220" r="3"/><circle cx="780" cy="205" r="2"/><circle cx="920" cy="215" r="3"/></g></svg>');
-            background-size: cover;
-            background-position: center;
-            z-index: -1;
-        }
-        
-        .main-container {
-            background: rgba(128, 128, 128, 0.3);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin: 20px auto;
-            max-width: 1200px;
-            padding: 30px;
-            color: white;
-        }
-        
-        .section-card {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            border-radius: 10px;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: #ff6f00;
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(255, 111, 0, 0.25);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(45deg, #1a237e, #3f51b5);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(45deg, #3f51b5, #1a237e);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(31, 81, 255, 0.3);
-        }
-        
-        .btn-warning {
-            background: linear-gradient(45deg, #ff6f00, #ff9800);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            color: white;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-warning:hover {
-            background: linear-gradient(45deg, #ff9800, #ff6f00);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 111, 0, 0.3);
-            color: white;
-        }
-        
-        .btn-success {
-            background: linear-gradient(45deg, #2e7d32, #4caf50);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(45deg, #c62828, #f44336);
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-        
-        .log-area {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            height: 300px;
-            overflow-y: auto;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-        }
-        
-        .log-entry {
-            margin-bottom: 8px;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-        
-        .log-success {
-            background: rgba(76, 175, 80, 0.2);
-            border-left: 3px solid #4caf50;
-        }
-        
-        .log-error {
-            background: rgba(244, 67, 54, 0.2);
-            border-left: 3px solid #f44336;
-        }
-        
-        .log-info {
-            background: rgba(33, 150, 243, 0.2);
-            border-left: 3px solid #2196f3;
-        }
-        
-        .performance-card {
-            background: linear-gradient(135deg, rgba(26, 35, 126, 0.8), rgba(255, 111, 0, 0.8));
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        
-        .performance-number {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-        
-        .tooltip-icon {
-            color: #ff6f00;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        
-        .author-signature {
-            background: linear-gradient(135deg, #1a237e, #ff6f00);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin-top: 30px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .title-section {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-        }
-        
-        .title-section h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(45deg, #ffffff, #ff6f00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        
-        .title-section p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        /* Menu Vertical */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: 250px;
-            background: linear-gradient(180deg, #1a237e 0%, #3f51b5 100%);
-            transform: translateX(-200px);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            padding: 20px 0;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-        }
-
-        .sidebar.active {
-            transform: translateX(0);
-        }
-
-        .sidebar-toggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1001;
-            background: linear-gradient(45deg, #1a237e, #3f51b5);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            color: white;
-            box-shadow: 0 4px 15px rgba(26, 35, 126, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-toggle:hover {
-            transform: scale(1.1);
-        }
-
-        .menu-item {
-            padding: 15px 20px;
-            color: white;
-            text-decoration: none;
-            display: block;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-        }
-
-        .menu-item:hover, .menu-item.active {
-            background: rgba(255, 255, 255, 0.1);
-            border-left-color: #ff6f00;
-            color: white;
-        }
-
-        .main-content {
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
-            padding: 20px;
-        }
-
-        .main-content.sidebar-open {
-            margin-left: 250px;
-        }
-
-        /* Preview Box */
-        .preview-box {
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid #4caf50;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 15px;
-            min-height: 100px;
-        }
-
-        .preview-content {
-            background: white;
-            color: #333;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Inter', sans-serif;
-            line-height: 1.5;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        /* Charts */
-        .chart-container {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            position: relative;
-            height: 400px;
-        }
-
-        /* Contact Management */
-        .contact-item {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .section-hidden {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .main-content.sidebar-open {
-                margin-left: 0;
-            }
-            
-            .sidebar {
-                width: 100%;
-                transform: translateX(-100%);
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Sender - Ricardo França</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Sidebar Menu -->
-    <div class="sidebar" id="sidebar">
-        <div class="text-center py-3">
-            <h5 class="text-white">Menu Principal</h5>
+  <div class="container-fluid">
+    <div class="main-container">
+      <div class="title-section">
+        <h1><i class="bi bi-whatsapp"></i> WhatsApp Sender</h1>
+        <p>Plataforma profissional para envio de mensagens em massa</p>
+      </div>
+
+      <!-- 3.1 Configuração da API -->
+      <div class="section-card">
+        <h3>
+          <i class="bi bi-gear"></i> Configuração da API 
+          <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+             title="Escolha uma API pré-configurada ou configure manualmente suas credenciais"></i>
+        </h3>
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <label class="form-label">Tipo de API 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Selecione Meta, Evolution, Twilio ou informe manualmente"></i>
+            </label>
+            <select class="form-select" id="tipoApi" onchange="alterarTipoApi()">
+              <option value="">Selecione...</option>
+              <option value="meta">Meta (Facebook)</option>
+              <option value="evolution">Evolution API</option>
+              <option value="twilio">Twilio API</option>
+              <option value="personalizada">API Personalizada</option>
+            </select>
+          </div>
         </div>
-        <a href="#" class="menu-item active" onclick="mostrarSecao('dashboard')">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('configuracao')">
-            <i class="bi bi-gear"></i> Configuração API
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('contatos')">
-            <i class="bi bi-people"></i> Gerenciar Contatos
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('mensagens')">
-            <i class="bi bi-chat-text"></i> Compor Mensagem
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('envio')">
-            <i class="bi bi-send"></i> Controle de Envio
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('performance')">
-            <i class="bi bi-graph-up"></i> Gráficos Performance
-        </a>
-        <a href="#" class="menu-item" onclick="mostrarSecao('logs')">
-            <i class="bi bi-list-ul"></i> Logs
-        </a>
+        <div class="row" id="camposApi" style="display: none;">
+          <div class="col-md-4">
+            <label class="form-label">Endpoint 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Endereço da API (gerado automaticamente)"></i>
+            </label>
+            <input type="url" class="form-control" id="apiEndpoint" readonly>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Token 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Token de acesso da API (Auth Token)"></i>
+            </label>
+            <input type="password" class="form-control" id="apiToken" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">ID / Account SID 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Meta: Phone ID | Twilio: Account SID"></i>
+            </label>
+            <input type="text" class="form-control" id="phoneId" required>
+          </div>
+        </div>
+        <div class="row mt-2" id="campoFromNumber" style="display:none;">
+          <div class="col-md-6">
+            <label class="form-label">Número Remetente (From) 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Número habilitado na API para envio de mensagens"></i>
+            </label>
+            <input type="text" class="form-control" id="fromNumber" placeholder="+5511999999999">
+          </div>
+        </div>
+        <button class="btn btn-primary mt-3" onclick="configurarAPI()" id="btnConfigurar" disabled>
+          <i class="bi bi-check-circle"></i> Configurar API
+        </button>
+      </div>
+
+      <!-- 3.2 Gerenciamento de Contatos -->
+      <div class="section-card">
+        <h3>
+          <i class="bi bi-people"></i> Gerenciamento de Contatos 
+          <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+             title="Insira telefones no formato E.164, ex.: 5511988778877,João,amigo"></i>
+        </h3>
+        <textarea class="form-control" id="contactsList" rows="6"
+          placeholder="5511988778877,João,amigo"></textarea>
+        <button class="btn btn-primary mt-3" onclick="salvarContatos()">
+          <i class="bi bi-save"></i> Salvar Contatos
+        </button>
+      </div>
+
+      <!-- 3.3 Composição da Mensagem -->
+      <div class="section-card">
+        <h3>
+          <i class="bi bi-chat-text"></i> Composição da Mensagem 
+          <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+             title="Use {nome} e {outro} que serão substituídos automaticamente"></i>
+        </h3>
+        <textarea class="form-control" id="messageText" rows="4"
+          placeholder="Olá {nome}, como vai você meu {outro}?"></textarea>
+        <button class="btn btn-primary mt-3" onclick="salvarMensagem()">
+          <i class="bi bi-save"></i> Salvar Mensagem
+        </button>
+      </div>
+
+      <!-- 3.4 Controle de Envio -->
+      <div class="section-card">
+        <h3><i class="bi bi-send"></i> Controle de Envio</h3>
+        <div class="row">
+          <div class="col-md-3">
+            <label class="form-label">Intervalo Mínimo (s)
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Tempo mínimo entre envios (>=5s)"></i>
+            </label>
+            <input type="number" class="form-control" id="minInterval" value="5" min="5" max="60">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Intervalo Máximo (s)
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Tempo máximo entre envios (até 60s)"></i>
+            </label>
+            <input type="number" class="form-control" id="maxInterval" value="10" min="5" max="60">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone de Teste 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Número que receberá mensagem de teste antes do envio em massa"></i>
+            </label>
+            <input type="text" class="form-control" id="testPhone" placeholder="5511988778877">
+          </div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-warning me-2" onclick="sendTestMessage()">
+            <i class="bi bi-lightning"></i> Enviar Teste
+          </button>
+          <button class="btn btn-success me-2" onclick="startSending()" id="startBtn">
+            <i class="bi bi-play"></i> Iniciar Envio
+          </button>
+          <button class="btn btn-primary me-2" onclick="pauseSending()" id="pauseBtn" disabled>
+            <i class="bi bi-pause"></i> Pausar
+          </button>
+          <button class="btn btn-danger" onclick="stopSending()" id="stopBtn" disabled>
+            <i class="bi bi-stop"></i> Cancelar
+          </button>
+        </div>
+      </div>
+
+      <!-- 3.5 Feedback e Monitoramento -->
+      <div class="row g-4">
+        <div class="col-12 col-lg-4">
+          <div class="section-card h-100">
+            <h3><i class="bi bi-graph-up"></i> Performance</h3>
+            <div class="performance-card">
+              <h5>Esta Semana</h5>
+              <div class="performance-number" id="weekSent">0</div>
+              <small>Enviadas | <span id="weekFailed">0</span> Falhas</small>
+            </div>
+            <div class="performance-card">
+              <h5>Este Semestre</h5>
+              <div class="performance-number" id="semesterSent">0</div>
+              <small>Enviadas | <span id="semesterFailed">0</span> Falhas</small>
+            </div>
+            <div class="performance-card">
+              <h5>Este Ano</h5>
+              <div class="performance-number" id="yearSent">0</div>
+              <small>Enviadas | <span id="yearFailed">0</span> Falhas</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-8">
+          <div class="section-card h-100">
+            <h3><i class="bi bi-list-ul"></i> Logs de Envio 
+              <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
+                 title="Acompanhe em tempo real o status de cada envio"></i>
+            </h3>
+            <div class="log-area" id="logArea">
+              <div class="log-entry log-info">
+                <strong>[Sistema]</strong> Aguardando início dos envios...
+              </div>
+            </div>
+            <button class="btn btn-secondary mt-2" onclick="clearLogs()">
+              <i class="bi bi-trash"></i> Limpar Logs
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico -->
+      <div class="section-card mt-4">
+        <h3><i class="bi bi-graph-up-arrow"></i> Gráficos em Tempo Real</h3>
+        <canvas id="chartEnvios" height="120"></canvas>
+      </div>
+
+      <!-- 3.6 Assinatura -->
+      <div class="author-signature mt-4">
+        <h4><i class="bi bi-person-badge"></i> Ricardo França</h4>
+        <p>Empresário, Investidor e Mentor</p>
+      </div>
     </div>
+  </div>
 
-    <!-- Toggle Button -->
-    <button class="sidebar-toggle" onclick="toggleSidebar()">
-        <i class="bi bi-list"></i>
-    </button>
-
-    <!-- Main Content -->
-    <div class="main-content" id="mainContent">
-        
-        <!-- Dashboard -->
-        <div id="secao-dashboard" class="section-content">
-            <div class="main-container">
-                <div class="title-section">
-                    <h1><i class="bi bi-whatsapp"></i> WhatsApp Sender</h1>
-                    <p>Plataforma profissional para envio de mensagens em massa</p>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="performance-card">
-                            <h5>Esta Semana</h5>
-                            <div class="performance-number" id="weekSent">0</div>
-                            <small>Enviadas | <span id="weekFailed">0</span> Falhas</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="performance-card">
-                            <h5>Este Semestre</h5>
-                            <div class="performance-number" id="semesterSent">0</div>
-                            <small>Enviadas | <span id="semesterFailed">0</span> Falhas</small>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="performance-card">
-                            <h5>Este Ano</h5>
-                            <div class="performance-number" id="yearSent">0</div>
-                            <small>Enviadas | <span id="yearFailed">0</span> Falhas</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Configuração API -->
-        <div id="secao-configuracao" class="section-content section-hidden">
-            <div class="main-container">
-            
-                <!-- Configuração da API -->
-                <div class="section-card">
-                    <h3><i class="bi bi-gear"></i> Configuração da API WhatsApp 
-                    <i class="bi bi-question-circle tooltip-icon" data-bs-toggle="tooltip" 
-                       title="Escolha uma API pré-configurada ou configure manualmente suas credenciais do WhatsApp Business"></i>
-                </h3>
-                
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label class="form-label">Tipo de API</label>
-                        <select class="form-select" id="tipoApi" onchange="alterarTipoApi()">
-                            <option value="">Selecione uma API...</option>
-                            <option value="meta">Meta (Facebook) WhatsApp Business API</option>
-                            <option value="evolution">Evolution API</option>
-                            <option value="personalizada">API Personalizada</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="row" id="camposApi" style="display: none;">
-                    <div class="col-md-4" id="campoEndpoint">
-                        <label class="form-label">Endpoint da API</label>
-                        <input type="url" class="form-control" id="apiEndpoint" 
-                               placeholder="https://graph.facebook.com/v18.0/..." readonly>
-                        <small class="text-light">Endpoint automático para a API selecionada</small>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Token de Acesso</label>
-                        <input type="password" class="form-control" id="apiToken" 
-                               placeholder="Cole seu token aqui">
-                    </div>
-                    <div class="col-md-4" id="campoPhoneId">
-                        <label class="form-label" id="labelPhoneId">ID do Telefone</label>
-                        <input type="text" class="form-control" id="phoneId" 
-                               placeholder="ID do número WhatsApp Business">
-                        <small class="text-light" id="ajudaPhoneId">Obrigatório para Meta API</small>
-                    </div>
-                </div>
-                
-                <div class="alert alert-info mt-3" id="infoApi" style="display: none;">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Instruções:</strong>
-                    <div id="textoInstrucoes"></div>
-                </div>
-                
-                    <button class="btn btn-primary mt-3" onclick="configurarAPI()" id="btnConfigurar" disabled>
-                        <i class="bi bi-check-circle"></i> Configurar API
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gerenciar Contatos -->
-        <div id="secao-contatos" class="section-content section-hidden">
-            <div class="main-container">
-                <div class="section-card">
-                    <h3><i class="bi bi-people"></i> Gerenciamento de Contatos</h3>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h5>Adicionar Novo Contato</h5>
-                            <div class="mb-2">
-                                <input type="text" class="form-control mb-2" id="novoTelefone" placeholder="Telefone (5511988778877)">
-                                <input type="text" class="form-control mb-2" id="novoNome" placeholder="Nome">
-                                <input type="text" class="form-control mb-2" id="novoOutro" placeholder="Outro (ex: amigo, cliente)">
-                                <button class="btn btn-success" onclick="adicionarContato()">
-                                    <i class="bi bi-plus-circle"></i> Adicionar
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <h5>Importar Lista</h5>
-                            <textarea class="form-control" id="contactsList" rows="6" 
-                                      placeholder="5511988778877,João,amigo&#10;5511977665544,Maria,cliente"></textarea>
-                            <button class="btn btn-primary mt-2" onclick="importarContatos()">
-                                <i class="bi bi-upload"></i> Importar Contatos
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <h5>Contatos Salvos <button class="btn btn-sm btn-secondary" onclick="carregarContatos()"><i class="bi bi-arrow-clockwise"></i></button></h5>
-                    <div id="listaContatos" class="mt-3">
-                        <!-- Contatos serão carregados aqui -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Compor Mensagem -->
-        <div id="secao-mensagens" class="section-content section-hidden">
-            <div class="main-container">
-                <div class="section-card">
-                    <h3><i class="bi bi-chat-text"></i> Composição da Mensagem</h3>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Texto da Mensagem</label>
-                            <textarea class="form-control" id="messageText" rows="6" 
-                                      placeholder="Olá {nome}! Como você está? Espero que tudo esteja bem com você, meu {outro}."
-                                      oninput="atualizarPreview()"></textarea>
-                            <small class="text-light mt-2">
-                                <i class="bi bi-info-circle"></i> Use {nome} e {outro} para personalizar a mensagem
-                            </small>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <label class="form-label">Pré-visualização da Mensagem</label>
-                            <div class="preview-box">
-                                <h6><i class="bi bi-eye"></i> Como ficará:</h6>
-                                <div class="preview-content" id="previewContent">
-                                    Digite uma mensagem para ver a pré-visualização...
-                                </div>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <label class="form-label">Exemplo com contato:</label>
-                                <input type="text" class="form-control mb-2" id="exemploNome" placeholder="Nome exemplo" value="João" onchange="atualizarPreview()">
-                                <input type="text" class="form-control" id="exemploOutro" placeholder="Outro exemplo" value="amigo" onchange="atualizarPreview()">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Controle de Envio -->
-        <div id="secao-envio" class="section-content section-hidden">
-            <div class="main-container">
-                <div class="section-card">
-                    <h3><i class="bi bi-send"></i> Controle de Envio</h3>
-                    
-                    <div class="row">
-                        <div class="col-md-3">
-                            <label class="form-label">Intervalo Mínimo (segundos)</label>
-                            <input type="number" class="form-control" id="minInterval" 
-                                   value="5" min="5" max="60">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Intervalo Máximo (segundos)</label>
-                            <input type="number" class="form-control" id="maxInterval" 
-                                   value="10" min="5" max="60">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Telefone para Teste</label>
-                            <input type="text" class="form-control" id="testPhone" 
-                                   placeholder="5511988778877">
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3">
-                        <button class="btn btn-warning me-2" onclick="sendTestMessage()">
-                            <i class="bi bi-lightning"></i> Enviar Teste
-                        </button>
-                        <button class="btn btn-success me-2" onclick="startSending()" id="startBtn">
-                            <i class="bi bi-play"></i> Iniciar Envio
-                        </button>
-                        <button class="btn btn-primary me-2" onclick="pauseSending()" id="pauseBtn" disabled>
-                            <i class="bi bi-pause"></i> Pausar
-                        </button>
-                        <button class="btn btn-danger" onclick="stopSending()" id="stopBtn" disabled>
-                            <i class="bi bi-stop"></i> Cancelar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gráficos Performance -->
-        <div id="secao-performance" class="section-content section-hidden">
-            <div class="main-container">
-                <h3><i class="bi bi-graph-up"></i> Análise de Performance</h3>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5>Envios dos Últimos 7 Dias</h5>
-                            <canvas id="chartSemana"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5>Envios por Mês (Este Ano)</h5>
-                            <canvas id="chartAno"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary" onclick="carregarGraficos()">
-                    <i class="bi bi-arrow-clockwise"></i> Atualizar Gráficos
-                </button>
-            </div>
-        </div>
-
-        <!-- Logs -->
-        <div id="secao-logs" class="section-content section-hidden">
-            <div class="main-container">
-                <div class="section-card">
-                    <h3><i class="bi bi-list-ul"></i> Logs de Envio</h3>
-                    
-                    <div class="log-area" id="logArea">
-                        <div class="log-entry log-info">
-                            <strong>[Sistema]</strong> Aguardando início dos envios...
-                        </div>
-                    </div>
-                    
-                    <button class="btn btn-secondary mt-2" onclick="clearLogs()">
-                        <i class="bi bi-trash"></i> Limpar Logs
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Assinatura do Autor -->
-        <div class="author-signature">
-            <h4><i class="bi bi-person-badge"></i> Ricardo França</h4>
-            <p class="mb-0">Empresário, Investidor e Mentor</p>
-            <small>Soluções tecnológicas para comunicação empresarial</small>
-        </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        // Initialize Socket.IO
-        const socket = io();
-        let isPaused = false;
-        let chartSemana, chartAno;
-        
-        // Initialize tooltips
-        document.addEventListener('DOMContentLoaded', function() {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
-            carregarContatos();
-            carregarApisDisponiveis();
-            carregarPerformance();
-        });
-        
-        // Socket event listeners
-        socket.on('atualizar_log', function(data) {
-            adicionarEntradaLog(data.mensagem, data.tipo, data.timestamp);
-        });
-        
-        socket.on('atualizar_performance', function(data) {
-            atualizarPerformance(data);
-        });
-        
-        socket.on('envio_parado', function() {
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('pauseBtn').disabled = true;
-            document.getElementById('stopBtn').disabled = true;
-            adicionarEntradaLog('Envio finalizado', 'info', new Date().toLocaleTimeString());
-        });
-
-        // Menu Functions
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            sidebar.classList.toggle('active');
-            mainContent.classList.toggle('sidebar-open');
-        }
-        
-        function mostrarSecao(secao) {
-            // Esconder todas as seções
-            const secoes = document.querySelectorAll('.section-content');
-            secoes.forEach(s => s.classList.add('section-hidden'));
-            
-            // Mostrar seção selecionada
-            document.getElementById(`secao-${secao}`).classList.remove('section-hidden');
-            
-            // Atualizar menu ativo
-            const menuItems = document.querySelectorAll('.menu-item');
-            menuItems.forEach(m => m.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Fechar menu em mobile
-            if (window.innerWidth <= 768) {
-                toggleSidebar();
-            }
-        }
-
-        // Contact Functions
-        function adicionarContato() {
-            const telefone = document.getElementById('novoTelefone').value;
-            const nome = document.getElementById('novoNome').value;
-            const outro = document.getElementById('novoOutro').value;
-            
-            if (!telefone) {
-                alert('Por favor, insira um telefone');
-                return;
-            }
-            
-            fetch('/api/contatos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telefone, nome, outro })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    document.getElementById('novoTelefone').value = '';
-                    document.getElementById('novoNome').value = '';
-                    document.getElementById('novoOutro').value = '';
-                    carregarContatos();
-                } else {
-                    alert(data.mensagem);
-                }
-            });
-        }
-        
-        function carregarContatos() {
-            fetch('/api/contatos')
-            .then(response => response.json())
-            .then(contatos => {
-                const lista = document.getElementById('listaContatos');
-                lista.innerHTML = '';
-                contatos.forEach(contato => {
-                    lista.innerHTML += `
-                        <div class="contact-item">
-                            <div>
-                                <strong>${contato.telefone}</strong><br>
-                                <small>${contato.nome} | ${contato.outro}</small>
-                            </div>
-                        </div>
-                    `;
-                });
-            });
-        }
-        
-        function importarContatos() {
-            const textoContatos = document.getElementById('contactsList').value;
-            const linhas = textoContatos.split('\n');
-            
-            linhas.forEach(linha => {
-                if (linha.trim()) {
-                    const partes = linha.split(',');
-                    const telefone = partes[0]?.trim();
-                    const nome = partes[1]?.trim() || '';
-                    const outro = partes[2]?.trim() || '';
-                    
-                    if (telefone) {
-                        fetch('/api/contatos', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ telefone, nome, outro })
-                        });
-                    }
-                }
-            });
-            
-            setTimeout(() => carregarContatos(), 1000);
-        }
-
-        // Preview Functions
-        function atualizarPreview() {
-            const mensagem = document.getElementById('messageText').value;
-            const nomeExemplo = document.getElementById('exemploNome').value || 'João';
-            const outroExemplo = document.getElementById('exemploOutro').value || 'amigo';
-            
-            const mensagemFinal = mensagem
-                .replace(/{nome}/g, nomeExemplo)
-                .replace(/{outro}/g, outroExemplo);
-            
-            document.getElementById('previewContent').textContent = mensagemFinal || 'Digite uma mensagem para ver a pré-visualização...';
-        }
-
-        // Chart Functions
-        function carregarGraficos() {
-            fetch('/api/graficos-performance')
-            .then(response => response.json())
-            .then(dados => {
-                criarGraficoSemana(dados.semana);
-                criarGraficoAno(dados.ano);
-            });
-        }
-        
-        function criarGraficoSemana(dados) {
-            const ctx = document.getElementById('chartSemana').getContext('2d');
-            
-            if (chartSemana) chartSemana.destroy();
-            
-            chartSemana = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dados.map(d => d.data),
-                    datasets: [{
-                        label: 'Sucessos',
-                        data: dados.map(d => d.sucessos),
-                        borderColor: '#4caf50',
-                        backgroundColor: 'rgba(76, 175, 80, 0.1)'
-                    }, {
-                        label: 'Erros',
-                        data: dados.map(d => d.erros),
-                        borderColor: '#f44336',
-                        backgroundColor: 'rgba(244, 67, 54, 0.1)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: 'white' } } },
-                    scales: {
-                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                    }
-                }
-            });
-        }
-        
-        function criarGraficoAno(dados) {
-            const ctx = document.getElementById('chartAno').getContext('2d');
-            
-            if (chartAno) chartAno.destroy();
-            
-            chartAno = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: dados.map(d => d.mes),
-                    datasets: [{
-                        label: 'Sucessos',
-                        data: dados.map(d => d.sucessos),
-                        backgroundColor: '#4caf50'
-                    }, {
-                        label: 'Erros',
-                        data: dados.map(d => d.erros),
-                        backgroundColor: '#f44336'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: 'white' } } },
-                    scales: {
-                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-                    }
-                }
-            });
-        }
-
-        // Utility Functions
-        function adicionarEntradaLog(mensagem, tipo, timestamp) {
-            const areaLog = document.getElementById('logArea');
-            const entradaLog = document.createElement('div');
-            entradaLog.className = `log-entry log-${tipo}`;
-            entradaLog.innerHTML = `<strong>[${timestamp}]</strong> ${mensagem}`;
-            areaLog.appendChild(entradaLog);
-            areaLog.scrollTop = areaLog.scrollHeight;
-        }
-        
-        function atualizarPerformance(dados) {
-            document.getElementById('weekSent').textContent = dados.semana.enviadas;
-            document.getElementById('weekFailed').textContent = dados.semana.falharam;
-            document.getElementById('semesterSent').textContent = dados.semestre.enviadas;
-            document.getElementById('semesterFailed').textContent = dados.semestre.falharam;
-            document.getElementById('yearSent').textContent = dados.ano.enviadas;
-            document.getElementById('yearFailed').textContent = dados.ano.falharam;
-        }
-        
-        function carregarPerformance() {
-            fetch('/api/performance')
-                .then(response => response.json())
-                .then(data => atualizarPerformance(data));
-        }
-        
-        function carregarApisDisponiveis() {
-            fetch('/api/apis-disponiveis')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('APIs disponíveis:', data);
-                });
-        }
-        
-        function alterarTipoApi() {
-            const tipoApi = document.getElementById('tipoApi').value;
-            const camposApi = document.getElementById('camposApi');
-            const infoApi = document.getElementById('infoApi');
-            const textoInstrucoes = document.getElementById('textoInstrucoes');
-            const btnConfigurar = document.getElementById('btnConfigurar');
-            const apiEndpoint = document.getElementById('apiEndpoint');
-            const campoPhoneId = document.getElementById('campoPhoneId');
-            const labelPhoneId = document.getElementById('labelPhoneId');
-            const ajudaPhoneId = document.getElementById('ajudaPhoneId');
-            
-            if (tipoApi) {
-                camposApi.style.display = 'flex';
-                infoApi.style.display = 'block';
-                btnConfigurar.disabled = false;
-                
-                switch(tipoApi) {
-                    case 'meta':
-                        apiEndpoint.value = 'https://graph.facebook.com/v18.0/{phone_id}/messages';
-                        apiEndpoint.readOnly = true;
-                        campoPhoneId.style.display = 'block';
-                        labelPhoneId.textContent = 'ID do Telefone';
-                        ajudaPhoneId.textContent = 'Obrigatório para Meta API';
-                        textoInstrucoes.innerHTML = `
-                            <strong>Meta (Facebook) WhatsApp Business API:</strong><br>
-                            1. Acesse o <a href="https://developers.facebook.com/" target="_blank">Facebook Developers</a><br>
-                            2. Crie um app WhatsApp Business<br>
-                            3. Copie o Token de Acesso permanente<br>
-                            4. Copie o ID do número de telefone WhatsApp Business
-                        `;
-                        break;
-                    case 'evolution':
-                        apiEndpoint.value = 'https://evolution-api.com/message/sendText/{instance}';
-                        apiEndpoint.readOnly = true;
-                        campoPhoneId.style.display = 'block';
-                        labelPhoneId.textContent = 'Nome da Instância';
-                        ajudaPhoneId.textContent = 'Nome da sua instância Evolution API';
-                        textoInstrucoes.innerHTML = `
-                            <strong>Evolution API:</strong><br>
-                            1. Configure sua instância Evolution API<br>
-                            2. Gere o token de acesso da API<br>
-                            3. Informe o nome da sua instância<br>
-                            4. Conecte seu WhatsApp via QR Code
-                        `;
-                        break;
-                    case 'personalizada':
-                        apiEndpoint.value = '';
-                        apiEndpoint.readOnly = false;
-                        apiEndpoint.placeholder = 'https://sua-api.com/send';
-                        campoPhoneId.style.display = 'block';
-                        labelPhoneId.textContent = 'Parâmetro Extra (opcional)';
-                        ajudaPhoneId.textContent = 'Campo adicional se necessário';
-                        textoInstrucoes.innerHTML = `
-                            <strong>API Personalizada:</strong><br>
-                            Configure manualmente sua API de WhatsApp.<br>
-                            Certifique-se de que sua API aceita requisições JSON com os campos 'to' e 'message'.
-                        `;
-                        break;
-                }
-            } else {
-                camposApi.style.display = 'none';
-                infoApi.style.display = 'none';
-                btnConfigurar.disabled = true;
-            }
-        }
-        
-        function configurarAPI() {
-            const tipoApi = document.getElementById('tipoApi').value;
-            const endpoint = document.getElementById('apiEndpoint').value;
-            const token = document.getElementById('apiToken').value;
-            const phoneId = document.getElementById('phoneId').value;
-            
-            if (!tipoApi || !token) {
-                alert('Por favor, selecione o tipo de API e preencha o token');
-                return;
-            }
-            
-            const dados = {
-                tipo_api: tipoApi,
-                endpoint: endpoint,
-                token: token,
-                phone_id: phoneId
-            };
-            
-            if (tipoApi === 'evolution') {
-                dados.instance = phoneId;
-            }
-            
-            fetch('/api/configurar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    adicionarEntradaLog('✓ ' + data.mensagem, 'success', new Date().toLocaleTimeString());
-                } else {
-                    adicionarEntradaLog('✗ ' + data.mensagem, 'error', new Date().toLocaleTimeString());
-                }
-            });
-        }
-        
-        function sendTestMessage() {
-            const telefone = document.getElementById('testPhone').value;
-            const mensagem = document.getElementById('messageText').value;
-            
-            if (!telefone || !mensagem) {
-                alert('Por favor, preencha o telefone e a mensagem para o teste');
-                return;
-            }
-            
-            fetch('/api/mensagem-teste', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telefone, mensagem })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    adicionarEntradaLog(`✓ Teste enviado: ${data.mensagem}`, 'success', new Date().toLocaleTimeString());
-                } else {
-                    adicionarEntradaLog(`✗ Erro no teste: ${data.mensagem}`, 'error', new Date().toLocaleTimeString());
-                }
-            });
-        }
-        
-        function startSending() {
-            const contatos = document.getElementById('contactsList').value;
-            const mensagem = document.getElementById('messageText').value;
-            const intervaloMin = document.getElementById('minInterval').value;
-            const intervaloMax = document.getElementById('maxInterval').value;
-            
-            if (!contatos || !mensagem) {
-                alert('Por favor, preencha a lista de contatos e a mensagem');
-                return;
-            }
-            
-            fetch('/api/iniciar-envio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contatos, mensagem,
-                    intervalo_min: intervaloMin,
-                    intervalo_max: intervaloMax
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    adicionarEntradaLog('✓ ' + data.mensagem, 'success', new Date().toLocaleTimeString());
-                    document.getElementById('startBtn').disabled = true;
-                    document.getElementById('pauseBtn').disabled = false;
-                    document.getElementById('stopBtn').disabled = false;
-                } else {
-                    adicionarEntradaLog('✗ ' + data.mensagem, 'error', new Date().toLocaleTimeString());
-                }
-            });
-        }
-        
-        function pauseSending() {
-            fetch('/api/pausar-envio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    isPaused = data.pausado;
-                    const pauseBtn = document.getElementById('pauseBtn');
-                    pauseBtn.innerHTML = isPaused ? 
-                        '<i class="bi bi-play"></i> Retomar' : 
-                        '<i class="bi bi-pause"></i> Pausar';
-                    adicionarEntradaLog('✓ ' + data.mensagem, 'info', new Date().toLocaleTimeString());
-                }
-            });
-        }
-        
-        function stopSending() {
-            fetch('/api/parar-envio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    adicionarEntradaLog('✓ ' + data.mensagem, 'info', new Date().toLocaleTimeString());
-                    document.getElementById('startBtn').disabled = false;
-                    document.getElementById('pauseBtn').disabled = true;
-                    document.getElementById('stopBtn').disabled = true;
-                }
-            });
-        }
-        
-        function clearLogs() {
-            document.getElementById('logArea').innerHTML = '';
-            adicionarEntradaLog('Logs limpos', 'info', new Date().toLocaleTimeString());
-        }
-    </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </body>
 </html>
-            const camposApi = document.getElementById('camposApi');
-            const infoApi = document.getElementById('infoApi');
-            const textoInstrucoes = document.getElementById('textoInstrucoes');
