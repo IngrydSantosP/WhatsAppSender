@@ -8,10 +8,70 @@ import re
 import requests
 from datetime import datetime, timedelta
 import os
+import sqlite3
+from contextlib import contextmanager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Configuração do banco de dados
+DB_NAME = 'whatsapp_sender.db'
+
+@contextmanager
+def obter_conexao_db():
+    """Context manager para conexões com o banco de dados"""
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def inicializar_banco():
+    """Inicializar tabelas do banco de dados"""
+    with obter_conexao_db() as conn:
+        cursor = conn.cursor()
+        
+        # Tabela de contatos salvos
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS contatos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                telefone TEXT NOT NULL,
+                outro TEXT,
+                grupo TEXT,
+                data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ativo BOOLEAN DEFAULT 1
+            )
+        ''')
+        
+        # Tabela de histórico de envios
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historico_envios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                telefone TEXT NOT NULL,
+                mensagem TEXT NOT NULL,
+                status TEXT NOT NULL,
+                data_envio DATETIME DEFAULT CURRENT_TIMESTAMP,
+                resposta_api TEXT
+            )
+        ''')
+        
+        # Tabela de estatísticas diárias
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS estatisticas_diarias (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                data DATE NOT NULL,
+                enviadas INTEGER DEFAULT 0,
+                falharam INTEGER DEFAULT 0,
+                UNIQUE(data)
+            )
+        ''')
 
 # Variáveis globais para controle de envio de mensagens
 fila_envio = []
