@@ -1,6 +1,18 @@
 # Overview
 
-This is a WhatsApp bulk messaging application built with Flask and SocketIO. The application provides a web-based interface for sending mass WhatsApp messages through an external API. Users can manage contacts with custom variables, compose personalized messages, control sending intervals, and monitor performance metrics. The application features real-time updates through WebSocket connections and includes comprehensive logging and error handling.
+Esta \u00e9 uma aplica\u00e7\u00e3o de envio de mensagens WhatsApp em massa constru\u00edda com Flask e SocketIO. A aplica\u00e7\u00e3o oferece uma interface web para envio de mensagens WhatsApp em massa atrav\u00e9s de APIs externas. Os usu\u00e1rios podem gerenciar contatos com vari\u00e1veis personalizadas, compor mensagens personalizadas, controlar intervalos de envio e monitorar m\u00e9tricas de performance. A aplica\u00e7\u00e3o possui atualiza\u00e7\u00f5es em tempo real via conex\u00f5es WebSocket e inclui logging abrangente e tratamento de erros.
+
+## Principais Funcionalidades
+
+### APIs Pr\u00e9-configuradas
+- **Meta (Facebook) WhatsApp Business API** - API oficial do Facebook para WhatsApp Business
+- **Evolution API** - API popular para automa\u00e7\u00e3o WhatsApp
+- **API Personalizada** - Op\u00e7\u00e3o para configurar qualquer API customizada
+
+### Interface Totalmente em Portugu\u00eas
+- Todos os textos, mensagens e c\u00f3digos traduzidos para portugu\u00eas
+- Instru\u00e7\u00f5es detalhadas para cada tipo de API
+- Tooltips explicativos em todos os campos
 
 # User Preferences
 
