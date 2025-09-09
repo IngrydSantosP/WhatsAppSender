@@ -8,6 +8,7 @@ import re
 import requests
 from datetime import datetime, timedelta
 import os
+import sqlite3
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -41,6 +42,48 @@ apis_preconfiguradas = {
         'requer_phone_id': False
     }
 }
+
+# Banco de dados SQLite
+def inicializar_banco():
+    """Inicializar banco de dados SQLite"""
+    conn = sqlite3.connect('contatos.db')
+    cursor = conn.cursor()
+    
+    # Criar tabela de contatos
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS contatos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telefone TEXT UNIQUE NOT NULL,
+            nome TEXT,
+            outro TEXT,
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ultima_modificacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Criar tabela de listas de contatos
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS listas_contatos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome_lista TEXT NOT NULL,
+            descricao TEXT,
+            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Criar tabela de performance detalhada
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS performance_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telefone TEXT,
+            status TEXT,
+            mensagem TEXT,
+            data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 
 # Acompanhamento de performance
 estatisticas_performance = {
@@ -94,6 +137,89 @@ def substituir_variaveis(mensagem, contato):
     mensagem = mensagem.replace('{nome}', contato['nome'])
     mensagem = mensagem.replace('{outro}', contato['outro'])
     return mensagem
+
+def salvar_contato(telefone, nome='', outro=''):
+    """Salvar contato no banco de dados"""
+    try:
+        conn = sqlite3.connect('contatos.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO contatos (telefone, nome, outro, ultima_modificacao)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ''', (telefone, nome, outro))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Erro ao salvar contato: {e}")
+        return False
+
+def obter_contatos():
+    """Obter todos os contatos do banco de dados"""
+    try:
+        conn = sqlite3.connect('contatos.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT telefone, nome, outro FROM contatos ORDER BY ultima_modificacao DESC')
+        contatos = cursor.fetchall()
+        conn.close()
+        return [{'telefone': c[0], 'nome': c[1], 'outro': c[2]} for c in contatos]
+    except Exception as e:
+        print(f"Erro ao obter contatos: {e}")
+        return []
+
+def salvar_log_performance(telefone, status, mensagem):
+    """Salvar log de performance no banco"""
+    try:
+        conn = sqlite3.connect('contatos.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO performance_logs (telefone, status, mensagem)
+            VALUES (?, ?, ?)
+        ''', (telefone, status, mensagem))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Erro ao salvar log: {e}")
+
+def obter_dados_graficos():
+    """Obter dados para gráficos de performance"""
+    try:
+        conn = sqlite3.connect('contatos.db')
+        cursor = conn.cursor()
+        
+        # Dados dos últimos 7 dias
+        cursor.execute('''
+            SELECT DATE(data_envio) as data, 
+                   SUM(CASE WHEN status = 'sucesso' THEN 1 ELSE 0 END) as sucessos,
+                   SUM(CASE WHEN status = 'erro' THEN 1 ELSE 0 END) as erros
+            FROM performance_logs 
+            WHERE data_envio >= date('now', '-7 days')
+            GROUP BY DATE(data_envio)
+            ORDER BY data
+        ''')
+        dados_semana = cursor.fetchall()
+        
+        # Dados mensais do ano atual
+        cursor.execute('''
+            SELECT strftime('%Y-%m', data_envio) as mes,
+                   SUM(CASE WHEN status = 'sucesso' THEN 1 ELSE 0 END) as sucessos,
+                   SUM(CASE WHEN status = 'erro' THEN 1 ELSE 0 END) as erros
+            FROM performance_logs 
+            WHERE strftime('%Y', data_envio) = strftime('%Y', 'now')
+            GROUP BY strftime('%Y-%m', data_envio)
+            ORDER BY mes
+        ''')
+        dados_ano = cursor.fetchall()
+        
+        conn.close()
+        
+        return {
+            'semana': [{'data': d[0], 'sucessos': d[1], 'erros': d[2]} for d in dados_semana],
+            'ano': [{'mes': d[0], 'sucessos': d[1], 'erros': d[2]} for d in dados_ano]
+        }
+    except Exception as e:
+        print(f"Erro ao obter dados gráficos: {e}")
+        return {'semana': [], 'ano': []}
 
 def enviar_mensagem_whatsapp(telefone, mensagem):
     """Enviar mensagem WhatsApp usando API"""
@@ -165,6 +291,7 @@ def trabalhador_envio_mensagens():
             estatisticas_performance['semana']['enviadas'] += 1
             estatisticas_performance['semestre']['enviadas'] += 1
             estatisticas_performance['ano']['enviadas'] += 1
+            salvar_log_performance(contato['telefone'], 'sucesso', resultado)
             socketio.emit('atualizar_log', {
                 'mensagem': f'✓ Enviado para {contato["telefone"]} - {resultado}',
                 'tipo': 'success',
@@ -174,6 +301,7 @@ def trabalhador_envio_mensagens():
             estatisticas_performance['semana']['falharam'] += 1
             estatisticas_performance['semestre']['falharam'] += 1
             estatisticas_performance['ano']['falharam'] += 1
+            salvar_log_performance(contato['telefone'], 'erro', resultado)
             socketio.emit('atualizar_log', {
                 'mensagem': f'✗ Falha para {contato["telefone"]} - {resultado}',
                 'tipo': 'error',
@@ -264,6 +392,8 @@ def iniciar_envio():
         contato['intervalo_min'] = intervalo_min
         contato['intervalo_max'] = intervalo_max
         fila_envio.append(contato)
+        # Salvar contato no banco de dados
+        salvar_contato(contato['telefone'], contato['nome'], contato['outro'])
     
     esta_enviando = True
     pausar_envio = False
@@ -296,5 +426,41 @@ def obter_performance():
 def obter_apis_disponiveis():
     return jsonify(apis_preconfiguradas)
 
+@app.route('/api/contatos', methods=['GET'])
+def listar_contatos():
+    contatos = obter_contatos()
+    return jsonify(contatos)
+
+@app.route('/api/contatos', methods=['POST'])
+def adicionar_contato():
+    dados = request.get_json()
+    telefone = dados.get('telefone', '')
+    nome = dados.get('nome', '')
+    outro = dados.get('outro', '')
+    
+    if not validar_numero_telefone(telefone):
+        return jsonify({'sucesso': False, 'mensagem': 'Número de telefone inválido'})
+    
+    sucesso = salvar_contato(telefone, nome, outro)
+    if sucesso:
+        return jsonify({'sucesso': True, 'mensagem': 'Contato salvo com sucesso'})
+    else:
+        return jsonify({'sucesso': False, 'mensagem': 'Erro ao salvar contato'})
+
+@app.route('/api/preview-mensagem', methods=['POST'])
+def preview_mensagem():
+    dados = request.get_json()
+    template_mensagem = dados.get('mensagem', '')
+    contato_exemplo = dados.get('contato', {'nome': 'João', 'outro': 'amigo'})
+    
+    mensagem_final = substituir_variaveis(template_mensagem, contato_exemplo)
+    return jsonify({'mensagem_preview': mensagem_final})
+
+@app.route('/api/graficos-performance', methods=['GET'])
+def obter_graficos_performance():
+    dados = obter_dados_graficos()
+    return jsonify(dados)
+
 if __name__ == '__main__':
+    inicializar_banco()
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, use_reloader=False, log_output=True)
